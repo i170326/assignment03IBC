@@ -36,11 +36,11 @@ func StartListening(portno string, user string) {
 		}
 	}
 	if user == "others" {
+		ln, err := net.Listen("tcp", portno)
+		if err != nil {
+			log.Fatal(err)
+		}
 		for {
-			ln, err := net.Listen("tcp", portno)
-			if err != nil {
-				log.Fatal(err)
-			}
 			peerNode, err = ln.Accept()
 			if err != nil {
 				log.Println(err)
@@ -69,7 +69,7 @@ func WriteString(c net.Conn, myListeningAddress string) {
 	c.Write([]byte(myListeningAddress))
 	recvd := make([]byte, 4096)
 	c.Read(recvd)
-	fmt.Println(string(recvd))
+	fmt.Print(string(recvd))
 }
 
 func ReadString(c net.Conn) string {
@@ -78,16 +78,17 @@ func ReadString(c net.Conn) string {
 	return string(rcvbuff)
 }
 func SendChainandConnInfo() {
-	fmt.Println("Quorum reached. Sending peer info to nodes")
-	for i := 0; i <= totalConn; i++ {
-		if i == totalConn {
+	fmt.Print("Quorum reached. Sending peer info to nodes")
+	fmt.Print(neighboursPorts)
+	for i := 0; i < totalConn; i++ {
+		if i == totalConn-1 {
 			connList[i].Write([]byte(neighboursPorts[0]))
 		}
 		if i != totalConn {
 			connList[i].Write([]byte(neighboursPorts[i+1]))
 		}
 	}
-	for i := 0; i <= totalConn; i++ {
+	for i := 0; i < totalConn; i++ {
 		gobEncoder := gob.NewEncoder(connList[i])
 		err := gobEncoder.Encode(chainHead)
 		if err != nil {
