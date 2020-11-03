@@ -50,39 +50,30 @@ func StartListening(portno string, user string) {
 }
 
 func HandleConnectionSatoshi(c net.Conn) {
-	recvdSlice := make([]byte, 11)
+	recvdSlice := make([]byte, 4096)
 	c.Read(recvdSlice)
-	neighboursPorts[totalConn] = string(recvdSlice)
+	neighboursPorts = append(neighboursPorts, string(recvdSlice))
 	c.Write([]byte("Welcome to MishaalCoin. Kindly wait for other nodes to join."))
+	if totalConn != 0 {
+		chainHead = a2.InsertBlock("", "", "Satoshi", 0, chainHead)
+	}
 }
 
 func WaitForQuorum() {
 	for totalConn != Quorum {
-		ln, err := net.Listen("tcp", SatoshiPort)
-		if err != nil {
-			log.Fatal(err)
-		}
-		connList[totalConn], err = ln.Accept()
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		HandleConnectionSatoshi(connList[totalConn])
-		totalConn = totalConn + 1
-		chainHead = a2.InsertBlock("", "", "Satoshi", 0, chainHead)
 	}
 
 }
 
 func WriteString(c net.Conn, myListeningAddress string) {
 	c.Write([]byte(myListeningAddress))
-	recvd := make([]byte, 11)
+	recvd := make([]byte, 4096)
 	c.Read(recvd)
 	fmt.Println(string(recvd))
 }
 
 func ReadString(c net.Conn) string {
-	rcvbuff := make([]byte, 11)
+	rcvbuff := make([]byte, 4096)
 	c.Read(rcvbuff)
 	return string(rcvbuff)
 }
