@@ -21,11 +21,11 @@ func StartListening(portno string, user string) {
 	if user == "satoshi" {
 		chainHead = a2.InsertBlock("", "", "Satoshi", 0, chainHead)
 		SatoshiPort = portno
+		ln, err := net.Listen("tcp", portno)
+		if err != nil {
+			log.Fatal(err)
+		}
 		for {
-			ln, err := net.Listen("tcp", portno)
-			if err != nil {
-				log.Fatal(err)
-			}
 			conn, err := ln.Accept()
 			if err != nil {
 				log.Println(err)
