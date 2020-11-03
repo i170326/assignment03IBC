@@ -2,6 +2,7 @@ package assignment03IBC
 
 import (
 	a2 "assignment02IBC_i170326" //"github.com/i170326/assignment02IBC_i170326"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
@@ -20,25 +21,30 @@ func StartListening(portno string, user string) {
 	if user == "satoshi" {
 		chainHead = a2.InsertBlock("", "", "Satoshi", 0, chainHead)
 		SatoshiPort = portno
-		ln, err := net.Listen("tcp", portno)
-		if err != nil {
-			log.Fatal(err)
+		for {
+			ln, err := net.Listen("tcp", portno)
+			if err != nil {
+				log.Fatal(err)
+			}
+			conn, err := ln.Accept()
+			if err != nil {
+				log.Println(err)
+			}
+			connList = append(connList, conn)
+			HandleConnectionSatoshi(connList[totalConn])
+			totalConn = totalConn + 1
 		}
-		connList[totalConn], err = ln.Accept()
-		if err != nil {
-			log.Println(err)
-		}
-		HandleConnectionSatoshi(connList[totalConn])
-		totalConn = totalConn + 1
 	}
 	if user == "others" {
-		ln, err := net.Listen("tcp", portno)
-		if err != nil {
-			log.Fatal(err)
-		}
-		peerNode, err = ln.Accept()
-		if err != nil {
-			log.Println(err)
+		for {
+			ln, err := net.Listen("tcp", portno)
+			if err != nil {
+				log.Fatal(err)
+			}
+			peerNode, err = ln.Accept()
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
@@ -90,4 +96,21 @@ func SendChainandConnInfo() {
 			connList[i].Write([]byte(neighboursPorts[i+1]))
 		}
 	}
+	for i := 0; i <= totalConn; i++ {
+		gobEncoder := gob.NewEncoder(connList[i])
+		err := gobEncoder.Encode(chainHead)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+func ReceiveChain(c net.Conn) *a2.Block {
+	var rcvdBlock a2.Block
+	dec := gob.NewDecoder(c)
+	err := dec.Decode(&rcvdBlock)
+	if err != nil {
+		log.Println(err)
+	}
+	return &rcvdBlock
 }
